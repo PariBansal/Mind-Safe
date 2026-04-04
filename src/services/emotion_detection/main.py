@@ -15,11 +15,7 @@ from datetime import datetime
 from enum import Enum
 import os
 from dotenv import load_dotenv
-
-# ML Libraries
-import numpy as np
-from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
-import torch
+import httpx
 
 # =================== SETUP ===================
 load_dotenv()
@@ -106,35 +102,17 @@ class TextAnalysisResponse(BaseModel):
 # =================== ML MODELS LOADING ===================
 
 class EmotionDetectionModel:
-    """Wrapper for emotion detection models"""
+    """Wrapper for emotion detection using HuggingFace Inference API (no local models)"""
+    
+    HF_API_URL = "https://api-inference.huggingface.co/models"
+    EMOTION_MODEL = "j-hartmann/emotion-english-distilroberta-base"
+    SENTIMENT_MODEL = "distilbert-base-uncased-finetuned-sst-2-english"
     
     def __init__(self):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        logger.info(f"Using device: {self.device}")
-        
-        try:
-            # Emotion classification model
-            self.emotion_model = pipeline(
-                "text-classification",
-                model="j-hartmann/emotion-english-distilroberta-base",
-                device=0 if self.device == "cuda" else -1
-            )
-            logger.info("✓ Emotion detection model loaded")
-        except Exception as e:
-            logger.error(f"Failed to load emotion model: {e}")
-            self.emotion_model = None
-        
-        try:
-            # Sentiment analysis model
-            self.sentiment_model = pipeline(
-                "sentiment-analysis",
-                model="distilbert-base-uncased-finetuned-sst-2-english",
-                device=0 if self.device == "cuda" else -1
-            )
-            logger.info("✓ Sentiment analysis model loaded")
-        except Exception as e:
-            logger.error(f"Failed to load sentiment model: {e}")
-            self.sentiment_model = None
+        self.hf_token = os.getenv("HF_API_TOKEN", "")
+        self.device = "api"
+        self._client = httpx.Client(timeout=30.0)
+        logger.info("Using HuggingFace Inference API (lightweight mode)")
         
         # Crisis keywords (expanded list)
         self.crisis_keywords = {
@@ -157,24 +135,36 @@ class EmotionDetectionModel:
             ]
         }
     
-    def analyze_sentiment(self, text: str) -> dict:
-        """Analyze sentiment using DistilBERT"""
-        if not self.sentiment_model:
-            logger.warning("Sentiment model not available")
-            return {
-                "sentiment": "NEUTRAL",
-                "score": 0.0,
-                "confidence": 0.0
-            }
-        
+    def _hf_query(self, model: str, text: str) -> list:
+        """Call HuggingFace Inference API"""
+        headers = {}
+        if self.hf_token:
+            headers["Authorization"] = f"Bearer {self.hf_token}"
         try:
-            result = self.sentiment_model(text[:512])[0]  # Limit to 512 tokens
+            resp = self._client.post(
+                f"{self.HF_API_URL}/{model}",
+                headers=headers,
+                json={"inputs": text[:512]},
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            logger.warning("HF Inference API call failed for %s: %s", model, e)
+            return []
+    
+    def analyze_sentiment(self, text: str) -> dict:
+        """Analyze sentiment using HuggingFace Inference API"""
+        try:
+            results = self._hf_query(self.SENTIMENT_MODEL, text)
+            if not results or not isinstance(results[0], list):
+                raise ValueError("Empty or unexpected response")
             
-            # Convert to our scale (-1 to 1)
-            score = 1.0 if result["label"] == "POSITIVE" else -1.0
-            score *= (result["score"] - 0.5) * 2  # Normalize to -1 to 1
+            # Find the top result
+            top = max(results[0], key=lambda x: x["score"])
             
-            # Map to sentiment level
+            score = 1.0 if top["label"] == "POSITIVE" else -1.0
+            score *= (top["score"] - 0.5) * 2
+            
             if score > 0.5:
                 sentiment = SentimentEnum.VERY_POSITIVE
             elif score > 0.1:
@@ -189,10 +179,10 @@ class EmotionDetectionModel:
             return {
                 "sentiment": sentiment,
                 "score": float(score),
-                "confidence": float(result["score"])
+                "confidence": float(top["score"])
             }
         except Exception as e:
-            logger.error(f"Sentiment analysis error: {e}")
+            logger.error("Sentiment analysis error: %s", e)
             return {
                 "sentiment": SentimentEnum.NEUTRAL,
                 "score": 0.0,
@@ -200,19 +190,12 @@ class EmotionDetectionModel:
             }
     
     def analyze_emotion(self, text: str) -> dict:
-        """Analyze emotions using j-hartmann model"""
-        if not self.emotion_model:
-            logger.warning("Emotion model not available")
-            return {
-                "emotion": EmotionEnum.NEUTRAL,
-                "confidence": 0.0,
-                "all_emotions": {}
-            }
-        
+        """Analyze emotions using HuggingFace Inference API"""
         try:
-            results = self.emotion_model(text[:512])
+            results = self._hf_query(self.EMOTION_MODEL, text)
+            if not results or not isinstance(results[0], list):
+                raise ValueError("Empty or unexpected response")
             
-            # Map model outputs to our emotion enum
             emotion_mapping = {
                 "joy": EmotionEnum.JOY,
                 "sadness": EmotionEnum.SADNESS,
@@ -221,29 +204,27 @@ class EmotionDetectionModel:
                 "surprise": EmotionEnum.SURPRISE,
                 "disgust": EmotionEnum.DISGUST,
                 "trust": EmotionEnum.TRUST,
-                "anticipation": EmotionEnum.ANTICIPATION
+                "anticipation": EmotionEnum.ANTICIPATION,
+                "neutral": EmotionEnum.NEUTRAL,
             }
             
-            primary_emotion = emotion_mapping.get(
-                results[0]["label"].lower(),
-                EmotionEnum.SURPRISE
-            )
+            top = max(results[0], key=lambda x: x["score"])
+            primary_emotion = emotion_mapping.get(top["label"].lower(), EmotionEnum.SURPRISE)
             
-            # Get all emotion scores if multiple results
             all_emotions = {
-                emotion_mapping.get(r["label"].lower(), "unknown"): r["score"]
-                for r in results
+                emotion_mapping.get(r["label"].lower(), r["label"]): r["score"]
+                for r in results[0]
             }
             
             return {
                 "emotion": primary_emotion,
-                "confidence": float(results[0]["score"]),
+                "confidence": float(top["score"]),
                 "all_emotions": all_emotions
             }
         except Exception as e:
-            logger.error(f"Emotion analysis error: {e}")
+            logger.error("Emotion analysis error: %s", e)
             return {
-                "emotion": EmotionEnum.SURPRISE,
+                "emotion": EmotionEnum.NEUTRAL,
                 "confidence": 0.0,
                 "all_emotions": {}
             }
@@ -388,13 +369,14 @@ async def get_stats():
     """Get service statistics and model information"""
     return {
         "service": "emotion-detection",
+        "mode": "huggingface-inference-api",
         "models": {
             "sentiment": "distilbert-base-uncased-finetuned-sst-2-english",
             "emotion": "j-hartmann/emotion-english-distilroberta-base"
         },
         "device": emotion_detector.device,
         "crisis_keywords_count": sum(len(k) for k in emotion_detector.crisis_keywords.values()),
-        "version": "1.0.0",
+        "version": "1.1.0",
         "timestamp": datetime.now().isoformat()
     }
 
