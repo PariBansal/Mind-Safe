@@ -472,15 +472,24 @@ export default function AvatarPage() {
           </div>
 
           {/* Chat Panel */}
-          <div className="lg:col-span-1 bg-white rounded-xl shadow-lg p-6 flex flex-col h-[600px]">
+          <div
+            className={`lg:col-span-1 bg-white rounded-xl shadow-lg p-6 flex flex-col h-[600px] ${showCustomizer ? "opacity-50 pointer-events-none" : ""}`}
+          >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">💬 Chat</h2>
-              <button
-                onClick={clearChat}
-                className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-500 transition hover:border-rose-400 hover:text-rose-500"
-              >
-                🗑️ Clear
-              </button>
+              <div className="flex items-center gap-2">
+                {showCustomizer && (
+                  <span className="text-xs text-amber-600 font-medium">
+                    Close customizer to chat
+                  </span>
+                )}
+                <button
+                  onClick={clearChat}
+                  className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-500 transition hover:border-rose-400 hover:text-rose-500"
+                >
+                  🗑️ Clear
+                </button>
+              </div>
             </div>
 
             {/* Chat History */}
