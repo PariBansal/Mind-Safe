@@ -82,6 +82,23 @@ const VRMAvatarModel = forwardRef(function VRMAvatarModel(
       vrm.scene.traverse((obj) => {
         if (obj.isMesh) obj.frustumCulled = false;
       });
+      // ── Fix T-pose: move arms to natural rest position ──
+      try {
+        const humanoid = vrm.humanoid;
+        if (humanoid) {
+          const leftUpper = humanoid.getRawBoneNode("leftUpperArm");
+          const rightUpper = humanoid.getRawBoneNode("rightUpperArm");
+          const leftLower = humanoid.getRawBoneNode("leftLowerArm");
+          const rightLower = humanoid.getRawBoneNode("rightLowerArm");
+          if (leftUpper) leftUpper.rotation.z = 1.1;
+          if (rightUpper) rightUpper.rotation.z = -1.1;
+          if (leftLower) leftLower.rotation.z = 0.15;
+          if (rightLower) rightLower.rotation.z = -0.15;
+        }
+      } catch {
+        // Bones not available
+      }
+
       vrmRef.current = vrm;
       sceneRef.current = vrm.scene;
       setLoaded(true);
@@ -129,18 +146,26 @@ const VRMAvatarModel = forwardRef(function VRMAvatarModel(
       ? new THREE.Color(materialOverrides.eyes)
       : null;
 
+    const applyColor = (mat, color) => {
+      // Support both standard materials and MToon/ShaderMaterial
+      if (mat.color) mat.color.copy(color);
+      if (mat.uniforms?.litFactor) mat.uniforms.litFactor.value.copy(color);
+      if (mat.uniforms?.shadeColorFactor)
+        mat.uniforms.shadeColorFactor.value.copy(color);
+    };
+
     sceneRef.current.traverse((obj) => {
       if (!obj.isMesh) return;
       const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
       mats.forEach((mat) => {
         const n = (mat.name || "").toLowerCase();
         if (hairColor && (n.includes("hair") || n.includes("bangs"))) {
-          mat.color.copy(hairColor);
+          applyColor(mat, hairColor);
         } else if (
           skinColor &&
           (n.includes("skin") || n.includes("face") || n.includes("body"))
         ) {
-          mat.color.copy(skinColor);
+          applyColor(mat, skinColor);
         } else if (
           clothesColor &&
           (n.includes("cloth") ||
@@ -150,14 +175,14 @@ const VRMAvatarModel = forwardRef(function VRMAvatarModel(
             n.includes("outfit") ||
             n.includes("dress"))
         ) {
-          mat.color.copy(clothesColor);
+          applyColor(mat, clothesColor);
         } else if (
           eyeColor &&
           n.includes("eye") &&
           !n.includes("eyebrow") &&
           !n.includes("eyelash")
         ) {
-          mat.color.copy(eyeColor);
+          applyColor(mat, eyeColor);
         }
       });
     });
@@ -232,6 +257,19 @@ const VRMAvatarModel = forwardRef(function VRMAvatarModel(
     // VRM update (spring bones, lookAt, etc.)
     if (vrmRef.current) {
       vrmRef.current.update(clampedDelta);
+
+      // Fix T-pose: keep arms in natural rest position after VRM update
+      const hum = vrmRef.current.humanoid;
+      if (hum) {
+        const la = hum.getRawBoneNode("leftUpperArm");
+        const ra = hum.getRawBoneNode("rightUpperArm");
+        const ll = hum.getRawBoneNode("leftLowerArm");
+        const rl = hum.getRawBoneNode("rightLowerArm");
+        if (la) la.rotation.z = 1.05;
+        if (ra) ra.rotation.z = -1.05;
+        if (ll) ll.rotation.z = 0.12;
+        if (rl) rl.rotation.z = -0.12;
+      }
     }
 
     // Apply character morphs (bone scaling)
@@ -285,7 +323,12 @@ const VRMAvatarModel = forwardRef(function VRMAvatarModel(
   const yOffset = -box.min.y * s - 1;
 
   return (
-    <primitive object={sceneRef.current} scale={s} position={[0, yOffset, 0]} />
+    <primitive
+      object={sceneRef.current}
+      scale={s}
+      position={[0, yOffset, 0]}
+      rotation={[0, Math.PI, 0]}
+    />
   );
 });
 
@@ -382,6 +425,7 @@ const Avatar3D = forwardRef(function Avatar3D(
 
         <Suspense fallback={<Loader />}>
           <VRMAvatarModel
+            key={url}
             ref={modelRef}
             url={url}
             emotion={emotion}

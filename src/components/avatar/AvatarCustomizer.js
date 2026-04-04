@@ -15,6 +15,7 @@ export default function AvatarCustomizer({
 }) {
   // Form state
   const [formData, setFormData] = useState({
+    avatarModel: currentPreferences.avatarModel || "female",
     avatarPreset: currentPreferences.avatarPreset || "neutral_light",
     background: currentPreferences.background || "living_room",
     emotion: currentPreferences.emotion || "neutral",
@@ -47,6 +48,11 @@ export default function AvatarCustomizer({
   }, [saveState, formData]);
 
   // Avatar and background presets
+  const avatarModels = [
+    { id: "female", name: "Female", emoji: "👩" },
+    { id: "male", name: "Male", emoji: "👨" },
+  ];
+
   const avatarPresets = [
     { id: "neutral_light", name: "Serene Light", color: "#E8B4A0" },
     { id: "neutral_dark", name: "Bold Dark", color: "#6B4423" },
@@ -55,12 +61,16 @@ export default function AvatarCustomizer({
   ];
 
   const backgroundPresets = [
-    { id: "living_room", name: "Living Room", emoji: "🏠" },
-    { id: "office", name: "Office", emoji: "🏢" },
-    { id: "garden", name: "Garden", emoji: "🌿" },
-    { id: "abstract", name: "Abstract", emoji: "🎨" },
-    { id: "space", name: "Space", emoji: "🚀" },
-    { id: "none", name: "None", emoji: "⭕" },
+    { id: "soft_blue", name: "Soft Blue", color: "#B8D4E8" },
+    { id: "lavender", name: "Lavender", color: "#C8B8DB" },
+    { id: "mint", name: "Mint", color: "#B5D8CC" },
+    { id: "peach", name: "Peach", color: "#F0D5C0" },
+    { id: "sky", name: "Sky", color: "#A8C8E8" },
+    { id: "warm_gray", name: "Warm Gray", color: "#C8C0B8" },
+    { id: "ocean", name: "Ocean", color: "#5B8FA8" },
+    { id: "forest", name: "Forest", color: "#5A8868" },
+    { id: "sunset", name: "Sunset", color: "#C87860" },
+    { id: "midnight", name: "Midnight", color: "#2A2A40" },
   ];
 
   const emotions = [
@@ -115,6 +125,7 @@ export default function AvatarCustomizer({
 
       // Auto-save preset and background changes immediately
       const preferences = {
+        avatarModel: updatedFormData.avatarModel,
         avatarPreset: updatedFormData.avatarPreset,
         background: updatedFormData.background,
         voiceSettings: {
@@ -151,6 +162,7 @@ export default function AvatarCustomizer({
   // Handle save
   const handleSave = useCallback(() => {
     const preferences = {
+      avatarModel: formData.avatarModel,
       avatarPreset: formData.avatarPreset,
       background: formData.background,
       emotion: formData.emotion,
@@ -169,6 +181,7 @@ export default function AvatarCustomizer({
   // Handle reset
   const handleReset = useCallback(() => {
     const resetState = {
+      avatarModel: currentPreferences.avatarModel || "female",
       avatarPreset: currentPreferences.avatarPreset || "neutral_light",
       background: currentPreferences.background || "living_room",
       emotion: currentPreferences.emotion || "neutral",
@@ -193,6 +206,34 @@ export default function AvatarCustomizer({
       <p className="text-sm text-gray-600 mb-6">
         Personalize your AI companion's appearance and behavior
       </p>
+
+      {/* Avatar Model Selection */}
+      <div className="mb-6">
+        <label className="block text-sm font-semibold text-gray-800 mb-3">
+          🧍 Avatar Model
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {avatarModels.map((model) => (
+            <button
+              key={model.id}
+              onClick={() => {
+                handleChange("avatarModel", model.id);
+                onPreview("avatarModel", model.id);
+              }}
+              className={`p-3 rounded-lg border-2 transition-all duration-200 ${
+                formData.avatarModel === model.id
+                  ? "border-indigo-500 bg-indigo-50"
+                  : "border-gray-200 bg-gray-50 hover:border-gray-300"
+              }`}
+            >
+              <span className="text-2xl block text-center">{model.emoji}</span>
+              <p className="text-xs font-medium text-gray-700 text-center mt-1">
+                {model.name}
+              </p>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Avatar Preset Selection */}
       <div className="mb-6">
@@ -228,7 +269,7 @@ export default function AvatarCustomizer({
       {/* Background Selection */}
       <div className="mb-6">
         <label className="block text-sm font-semibold text-gray-800 mb-3">
-          🎨 Background Scene
+          🎨 Background Color
         </label>
         <div className="grid grid-cols-5 gap-2">
           {backgroundPresets.map((bg) => (
@@ -245,9 +286,12 @@ export default function AvatarCustomizer({
               }`}
               title={bg.name}
             >
-              <span className="text-xl">{bg.emoji}</span>
+              <div
+                className="w-6 h-6 rounded-full mx-auto"
+                style={{ backgroundColor: bg.color }}
+              ></div>
               <p className="text-xs font-medium text-gray-600 mt-1">
-                {bg.name.split(" ")[0]}
+                {bg.name}
               </p>
             </button>
           ))}

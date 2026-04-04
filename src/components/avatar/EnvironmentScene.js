@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 /**
@@ -28,16 +28,23 @@ const EMOTION_TINT = {
 };
 
 /**
- * Map backgrounds → ground color + lighting preset hint
+ * Map backgrounds → ground color + lighting preset hint + scene background
  */
 const BACKGROUND_COLORS = {
-  living_room: { ground: "#8B7355", lightPreset: "warm" },
-  office: { ground: "#6B7B8D", lightPreset: "studio" },
-  garden: { ground: "#4A7C59", lightPreset: "warm" },
-  abstract: { ground: "#4B0082", lightPreset: "cool" },
-  space: { ground: "#0a0a2e", lightPreset: "night" },
-  none: { ground: "#1a1a2e", lightPreset: "studio" },
-  starfield: { ground: "#1a1a2e", lightPreset: "studio" },
+  soft_blue: { ground: "#90B8D4", lightPreset: "studio", sceneBg: "#B8D4E8" },
+  lavender: { ground: "#A898C0", lightPreset: "cool", sceneBg: "#C8B8DB" },
+  mint: { ground: "#90C0A8", lightPreset: "studio", sceneBg: "#B5D8CC" },
+  peach: { ground: "#D8B8A0", lightPreset: "warm", sceneBg: "#F0D5C0" },
+  sky: { ground: "#88A8C8", lightPreset: "studio", sceneBg: "#A8C8E8" },
+  warm_gray: { ground: "#A8A098", lightPreset: "warm", sceneBg: "#C8C0B8" },
+  ocean: { ground: "#4A7890", lightPreset: "cool", sceneBg: "#5B8FA8" },
+  forest: { ground: "#4A7858", lightPreset: "warm", sceneBg: "#5A8868" },
+  sunset: { ground: "#B06850", lightPreset: "sunset", sceneBg: "#C87860" },
+  midnight: { ground: "#1a1a2e", lightPreset: "night", sceneBg: "#2A2A40" },
+  // Legacy fallbacks
+  living_room: { ground: "#8B7355", lightPreset: "warm", sceneBg: "#3D2B1F" },
+  charcoal: { ground: "#2a2a3e", lightPreset: "studio", sceneBg: "#1a1a2e" },
+  starfield: { ground: "#1a1a2e", lightPreset: "studio", sceneBg: "#0a0a1a" },
 };
 
 /**
@@ -52,6 +59,7 @@ export function EnvironmentScene({
   const ambientRef = useRef(null);
   const dirRef = useRef(null);
   const groundRef = useRef(null);
+  const { scene } = useThree();
 
   const bgConfig = BACKGROUND_COLORS[background] || BACKGROUND_COLORS.starfield;
   const effectivePreset =
@@ -60,9 +68,18 @@ export function EnvironmentScene({
     LIGHTING_PRESETS.studio;
   const tint = EMOTION_TINT[emotion] || EMOTION_TINT.neutral;
 
+  // Set the 3D scene background color so it's visually distinct
+  if (!scene.background) scene.background = new THREE.Color(bgConfig.sceneBg);
+
   // Smooth color transitions each frame
   useFrame((_, delta) => {
     const speed = delta * 3;
+
+    // Lerp scene background
+    if (scene.background) {
+      const targetBg = new THREE.Color(bgConfig.sceneBg);
+      scene.background.lerp(targetBg, speed);
+    }
     if (ambientRef.current) {
       const target = new THREE.Color(effectivePreset.ambient).multiply(
         new THREE.Color(tint),
@@ -100,12 +117,12 @@ export function EnvironmentScene({
         position={[0, -1, 0]}
         receiveShadow={false}
       >
-        <planeGeometry args={[10, 10]} />
+        <planeGeometry args={[20, 20]} />
         <meshStandardMaterial
           ref={groundRef}
           color={bgConfig.ground}
           transparent
-          opacity={0.4}
+          opacity={0.6}
         />
       </mesh>
     </>

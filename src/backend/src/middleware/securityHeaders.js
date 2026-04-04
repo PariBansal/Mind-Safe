@@ -6,7 +6,7 @@ function securityHeaders(req, res, next) {
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader(
     "Permissions-Policy",
-    "camera=(), microphone=(), geolocation=()",
+    "camera=(), microphone=(self), geolocation=()",
   );
   res.setHeader("Cross-Origin-Resource-Policy", "same-site");
 

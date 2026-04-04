@@ -3,9 +3,16 @@
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import AvatarCustomizer from "@/components/avatar/AvatarCustomizer";
+import { AVATAR_PRESETS } from "@/components/avatar/avatarPresets";
 import { fetchWithAuth } from "@/lib/authClient";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+// Map model IDs to VRM file paths
+const AVATAR_MODELS = {
+  female: "/avatars/ExprAvatar1.vrm",
+  male: "/avatars/ExprAvatar2.vrm",
+};
 
 // Dynamic import to avoid SSR issues with WebGL / Three.js
 const Avatar3D = dynamic(() => import("@/components/Avatar3D"), { ssr: false });
@@ -19,7 +26,9 @@ export default function AvatarPage() {
   const [saveState, setSaveState] = useState("idle");
   const [chatSessionId, setChatSessionId] = useState(null);
   const [showEmojiBar, setShowEmojiBar] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const avatarRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   const quickEmojis = [
     "😊",
@@ -41,8 +50,9 @@ export default function AvatarPage() {
 
   // ✨ PREFERENCES STATE
   const [preferences, setPreferences] = useState({
+    avatarModel: "female",
     avatarPreset: "neutral_light",
-    background: "living_room",
+    background: "soft_blue",
     emotion: "neutral",
     skinTone: "#d4a574",
     hairColor: "#1a1a2e",
@@ -60,6 +70,13 @@ export default function AvatarPage() {
   const savePreferences = async (newPrefs) => {
     try {
       setSaveState("saving");
+
+      // Resolve preset colors into preferences
+      if (newPrefs.avatarPreset && AVATAR_PRESETS[newPrefs.avatarPreset]) {
+        const preset = AVATAR_PRESETS[newPrefs.avatarPreset];
+        newPrefs.skinTone = preset.skinTone;
+        newPrefs.hairColor = preset.hairColor;
+      }
 
       // Update local state immediately
       setPreferences(newPrefs);
@@ -141,6 +158,25 @@ export default function AvatarPage() {
     utterance.pitch = vs.pitch ?? 1.0;
     utterance.rate = vs.rate ?? 1.0;
     utterance.volume = vs.volume ?? 0.8;
+
+    // Map voice profile ID to an actual browser voice
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0 && vs.voiceProfile) {
+      const profileMap = {
+        david_english: (v) => /david/i.test(v.name) && /en/i.test(v.lang),
+        ana_friendly: (v) =>
+          /ana|zira|samantha/i.test(v.name) && /en/i.test(v.lang),
+        female_us: (v) =>
+          /female|samantha|zira/i.test(v.name) && /en.US/i.test(v.lang),
+        male_uk: (v) =>
+          /male|daniel|george/i.test(v.name) && /en.GB/i.test(v.lang),
+        female_uk: (v) =>
+          /female|hazel|kate/i.test(v.name) && /en.GB/i.test(v.lang),
+      };
+      const matcher = profileMap[vs.voiceProfile];
+      const matched = matcher ? voices.find(matcher) : null;
+      if (matched) utterance.voice = matched;
+    }
     utterance.onstart = () => {
       setIsSpeaking(true);
       setSpeakingText(text);
@@ -154,6 +190,41 @@ export default function AvatarPage() {
       setSpeakingText("");
     };
     window.speechSynthesis.speak(utterance);
+  };
+
+  // ── Voice Input: Speech-to-text via Web Speech API ──
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition =
+      typeof window !== "undefined" &&
+      (window.SpeechRecognition || window.webkitSpeechRecognition);
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setUserMessage((prev) => (prev ? prev + " " + transcript : transcript));
+      setIsListening(false);
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
   };
 
   const handleSendMessage = async () => {
@@ -196,13 +267,6 @@ export default function AvatarPage() {
 
       // Retry once on 502 (chatbot waking up from sleep on free tier)
       if (chatbotRes.status === 502) {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg._pendingId === pendingId
-              ? { ...msg, content: "Waking up, please wait..." }
-              : msg,
-          ),
-        );
         await new Promise((r) => setTimeout(r, 8000));
         chatbotRes = await fetchWithAuth(
           `${API_BASE_URL}/api/chatbot`,
@@ -308,10 +372,23 @@ export default function AvatarPage() {
 
   // Preview preferences without saving (for real-time customizer updates)
   const handlePreviewPreferences = (field, value) => {
-    setPreferences((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    if (field === "avatarPreset" && AVATAR_PRESETS[value]) {
+      const preset = AVATAR_PRESETS[value];
+      setPreferences((prev) => ({
+        ...prev,
+        avatarPreset: value,
+        skinTone: preset.skinTone,
+        hairColor: preset.hairColor,
+        clothingColor: prev.clothingColor, // keep user's clothing choice
+      }));
+    } else if (field === "avatarModel") {
+      setPreferences((prev) => ({ ...prev, avatarModel: value }));
+    } else {
+      setPreferences((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    }
   };
 
   return (
@@ -358,7 +435,10 @@ export default function AvatarPage() {
               {userId ? (
                 <Avatar3D
                   ref={avatarRef}
-                  url="/avatars/AvatarSample.vrm"
+                  url={
+                    AVATAR_MODELS[preferences?.avatarModel] ||
+                    AVATAR_MODELS.female
+                  }
                   emotion={preferences?.emotion || emotion}
                   emotionIntensity={0.7}
                   isSpeaking={isSpeaking}
@@ -439,6 +519,17 @@ export default function AvatarPage() {
                   title="Emojis"
                 >
                   😊
+                </button>
+                <button
+                  onClick={toggleListening}
+                  className={`rounded-lg border px-2 py-1 text-lg transition ${
+                    isListening
+                      ? "border-red-500 bg-red-50 text-red-600 animate-pulse"
+                      : "border-gray-300 hover:border-indigo-400"
+                  }`}
+                  title={isListening ? "Stop listening" : "Speak"}
+                >
+                  🎤
                 </button>
                 <textarea
                   value={userMessage}
