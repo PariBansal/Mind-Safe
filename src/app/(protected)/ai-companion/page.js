@@ -208,13 +208,16 @@ export default function AICompanion() {
         aiResponseText =
           chatbotData.response ||
           "I hear you. Thank you for sharing that with me.";
+      } else if (chatbotRes.status === 429) {
+        aiResponseText =
+          "I need a moment to catch my breath — too many messages at once. Please wait a minute and try again.";
       } else {
         aiResponseText =
           "I am having trouble connecting right now. Please try again.";
       }
     } catch {
       aiResponseText =
-        "I am having trouble connecting right now. Please try again.";
+        "I'm waking up — the service was resting. Please send your message again in a few seconds.";
     }
 
     const aiResponse = { role: "ai", content: aiResponseText };
