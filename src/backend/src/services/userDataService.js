@@ -22,6 +22,11 @@ async function getChatMessages(userId) {
   return { messages: await userStore.getUserChats(userId) };
 }
 
+async function clearChatMessages(userId) {
+  await userStore.clearChatMessages(userId);
+  return { success: true };
+}
+
 async function addMoodEntry(userId, payload) {
   await userStore.addMoodEntry(userId, {
     mood: payload.mood,
@@ -131,6 +136,7 @@ async function getAvatarPreferences(userId) {
 module.exports = {
   addChatMessage,
   getChatMessages,
+  clearChatMessages,
   addMoodEntry,
   getMoodEntries,
   saveAvatar,

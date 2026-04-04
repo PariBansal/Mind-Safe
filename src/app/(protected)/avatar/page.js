@@ -18,7 +18,10 @@ export default function AvatarPage() {
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [saveState, setSaveState] = useState("idle");
   const [chatSessionId, setChatSessionId] = useState(null);
+  const [showEmojiBar, setShowEmojiBar] = useState(false);
   const avatarRef = useRef(null);
+
+  const quickEmojis = ["😊", "😢", "😰", "😡", "😴", "🤗", "💪", "🙏", "❤️", "😔"];
 
   // Avatar state driven by chat
   const [emotion, setEmotion] = useState("neutral");
@@ -101,6 +104,20 @@ export default function AvatarPage() {
       }
     })();
   }, []);
+
+  const clearChat = async () => {
+    setChatHistory([]);
+    setChatSessionId(null);
+    try {
+      await fetchWithAuth(
+        `${API_BASE_URL}/api/chat`,
+        { method: "DELETE" },
+        API_BASE_URL,
+      );
+    } catch {
+      // Non-blocking
+    }
+  };
 
   // Send message to chatbot
   // ── Voice: speak text aloud via Web Speech API ──
@@ -327,7 +344,15 @@ export default function AvatarPage() {
 
           {/* Chat Panel */}
           <div className="lg:col-span-1 bg-white rounded-xl shadow-lg p-6 flex flex-col h-[600px]">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">💬 Chat</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">💬 Chat</h2>
+              <button
+                onClick={clearChat}
+                className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-500 transition hover:border-rose-400 hover:text-rose-500"
+              >
+                🗑️ Clear
+              </button>
+            </div>
 
             {/* Chat History */}
             <div className="flex-1 overflow-y-auto mb-4 space-y-3 bg-gray-50 rounded-lg p-3">
@@ -357,14 +382,36 @@ export default function AvatarPage() {
 
             {/* Input */}
             <div className="border-t pt-3">
-              <textarea
-                value={userMessage}
-                onChange={(e) => setUserMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type your message..."
-                className="w-full p-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-2"
-                rows="3"
-              />
+              {showEmojiBar && (
+                <div className="flex flex-wrap gap-1 mb-2 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1">
+                  {quickEmojis.map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => setUserMessage((prev) => prev + emoji)}
+                      className="text-lg transition hover:scale-125"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-1 mb-2">
+                <button
+                  onClick={() => setShowEmojiBar(!showEmojiBar)}
+                  className="rounded-lg border border-gray-300 px-2 py-1 text-lg transition hover:border-indigo-400"
+                  title="Emojis"
+                >
+                  😊
+                </button>
+                <textarea
+                  value={userMessage}
+                  onChange={(e) => setUserMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your message..."
+                  className="flex-1 p-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  rows="2"
+                />
+              </div>
               <button
                 onClick={handleSendMessage}
                 disabled={isLoading || !userMessage.trim() || !userId}

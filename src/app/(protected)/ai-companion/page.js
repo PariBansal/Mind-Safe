@@ -18,6 +18,9 @@ export default function AICompanion() {
   const [useMemory, setUseMemory] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [prefsSaveState, setPrefsSaveState] = useState("idle");
+  const [showEmojiBar, setShowEmojiBar] = useState(false);
+
+  const quickEmojis = ["😊", "😢", "😰", "😡", "😴", "🤗", "💪", "🙏", "❤️", "😔"];
 
   // Voice & Audio States
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
@@ -120,6 +123,22 @@ export default function AICompanion() {
       }
     } catch {
       console.log("Error loading chat");
+    }
+  };
+
+  const clearChat = async () => {
+    setMessages([
+      { role: "ai", content: "Hi, I'm here for you. How are you feeling today?" },
+    ]);
+    setChatSessionId(null);
+    try {
+      await fetchWithAuth(
+        `${API_BASE_URL}/api/chat`,
+        { method: "DELETE" },
+        API_BASE_URL,
+      );
+    } catch {
+      // Non-blocking
     }
   };
 
@@ -328,6 +347,13 @@ export default function AICompanion() {
           ⚙️ Voice Settings
         </button>
 
+        <button
+          onClick={clearChat}
+          className="rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-xs font-medium text-slate-300 transition hover:border-rose-500 hover:text-rose-400"
+        >
+          🗑️ Clear Chat
+        </button>
+
         <span
           className={`text-xs font-medium ${
             prefsSaveState === "saving"
@@ -370,22 +396,44 @@ export default function AICompanion() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="mt-4 flex gap-3">
-        <input
-          type="text"
-          placeholder="Type your message..."
-          className="flex-1 rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm text-slate-100 placeholder-slate-400 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-        />
-        <button
-          onClick={handleSend}
-          disabled={isSending}
-          className="rounded-xl bg-cyan-600 px-6 py-3 text-sm font-semibold transition hover:bg-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-        >
-          {isSending ? "Sending..." : "Send"}
-        </button>
+      <div className="mt-4 flex flex-col gap-2">
+        {showEmojiBar && (
+          <div className="flex flex-wrap gap-2 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2">
+            {quickEmojis.map((emoji) => (
+              <button
+                key={emoji}
+                onClick={() => setInput((prev) => prev + emoji)}
+                className="text-xl transition hover:scale-125"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowEmojiBar(!showEmojiBar)}
+            className="rounded-xl border border-slate-600 bg-slate-800 px-3 py-3 text-lg transition hover:border-cyan-500"
+            title="Emojis"
+          >
+            😊
+          </button>
+          <input
+            type="text"
+            placeholder="Type your message..."
+            className="flex-1 rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm text-slate-100 placeholder-slate-400 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          />
+          <button
+            onClick={handleSend}
+            disabled={isSending}
+            className="rounded-xl bg-cyan-600 px-6 py-3 text-sm font-semibold transition hover:bg-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          >
+            {isSending ? "Sending..." : "Send"}
+          </button>
+        </div>
       </div>
 
       {/* Voice Settings Modal */}

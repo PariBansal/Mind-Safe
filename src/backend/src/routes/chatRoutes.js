@@ -20,6 +20,7 @@ function createChatRoutes(chatController, verifyToken) {
     asyncHandler(chatController.addMessage),
   );
   router.get("/chat", verifyToken, asyncHandler(chatController.getMessages));
+  router.delete("/chat", verifyToken, asyncHandler(chatController.clearMessages));
 
   return router;
 }

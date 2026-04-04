@@ -250,6 +250,10 @@ function addChatMessage(userId, message) {
   state.chats.set(userId, messages);
 }
 
+function clearChatMessages(userId) {
+  state.chats.set(userId, []);
+}
+
 function getUserMoods(userId) {
   return (state.moods.get(userId) || []).map(decodeStoredValue);
 }
@@ -302,6 +306,7 @@ module.exports = {
   deleteUserById,
   getUserChats,
   addChatMessage,
+  clearChatMessages,
   getUserMoods,
   addMoodEntry,
   getUserAvatar,

@@ -498,6 +498,13 @@ async function addChatMessage(userId, message) {
   return messageId;
 }
 
+async function clearChatMessages(userId) {
+  await pool.query(
+    `DELETE FROM ${TABLES.chatMessages} WHERE user_id = $1`,
+    [userId],
+  );
+}
+
 /**
  * Mood operations
  */
@@ -628,6 +635,7 @@ module.exports = {
   deleteUserById,
   getUserChats,
   addChatMessage,
+  clearChatMessages,
   getUserMoods,
   addMoodEntry,
   getUserAvatar,

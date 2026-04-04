@@ -96,6 +96,11 @@ function createChatController(userDataService, { chatbotServiceUrl }) {
       return res.json(result);
     },
 
+    async clearMessages(req, res) {
+      const result = await userDataService.clearChatMessages(req.user.id);
+      return res.json(result);
+    },
+
     async chatbotHealth(_req, res) {
       try {
         const controller = new AbortController();
