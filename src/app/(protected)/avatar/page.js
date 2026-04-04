@@ -417,7 +417,19 @@ export default function AvatarPage() {
             </p>
           </div>
           <button
-            onClick={() => setShowCustomizer(!showCustomizer)}
+            onClick={() => {
+              const opening = !showCustomizer;
+              if (
+                opening &&
+                typeof window !== "undefined" &&
+                window.speechSynthesis
+              ) {
+                window.speechSynthesis.cancel();
+                setIsSpeaking(false);
+                setSpeakingText("");
+              }
+              setShowCustomizer(opening);
+            }}
             className="rounded-lg bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-700 transition-colors shadow-md"
           >
             {showCustomizer ? "✕ Close" : "⚙️ Customize"}
@@ -472,9 +484,7 @@ export default function AvatarPage() {
           </div>
 
           {/* Chat Panel */}
-          <div
-            className="lg:col-span-1 bg-white rounded-xl shadow-lg p-6 flex flex-col h-[600px]"
-          >
+          <div className="lg:col-span-1 bg-white rounded-xl shadow-lg p-6 flex flex-col h-[600px]">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">💬 Chat</h2>
               <div className="flex items-center gap-2">
@@ -494,7 +504,9 @@ export default function AvatarPage() {
             </div>
 
             {/* Chat History */}
-            <div className={`flex-1 overflow-y-auto mb-4 space-y-3 bg-gray-50 rounded-lg p-3 ${showCustomizer ? "opacity-50" : ""}`}>
+            <div
+              className={`flex-1 overflow-y-auto mb-4 space-y-3 bg-gray-50 rounded-lg p-3 ${showCustomizer ? "opacity-50" : ""}`}
+            >
               {chatHistory.length === 0 ? (
                 <div className="text-center text-gray-400 py-8">
                   <p className="text-sm">Start a conversation...</p>
@@ -560,7 +572,11 @@ export default function AvatarPage() {
                   onChange={(e) => setUserMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
                   disabled={showCustomizer}
-                  placeholder={showCustomizer ? "Close customizer to chat..." : "Type your message..."}
+                  placeholder={
+                    showCustomizer
+                      ? "Close customizer to chat..."
+                      : "Type your message..."
+                  }
                   className="flex-1 p-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                   rows="2"
                 />
