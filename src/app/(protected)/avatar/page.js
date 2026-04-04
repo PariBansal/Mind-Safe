@@ -83,6 +83,23 @@ export default function AvatarPage() {
     fetch(`${API_BASE_URL}/api/chatbot/health`, { method: "GET" }).catch(
       () => {},
     );
+
+    // Load persisted avatar chat history
+    (async () => {
+      try {
+        const res = await fetchWithAuth(
+          `${API_BASE_URL}/api/chat`,
+          { method: "GET" },
+          API_BASE_URL,
+        );
+        const data = await res.json();
+        if (res.ok && data.messages?.length) {
+          setChatHistory(data.messages);
+        }
+      } catch {
+        // Non-blocking — start with empty chat
+      }
+    })();
   }, []);
 
   // Send message to chatbot
@@ -198,6 +215,30 @@ export default function AvatarPage() {
 
     // Speak the response aloud (drives lip-sync via utterance events)
     speakText(aiResponseText);
+
+    // Persist both messages to backend
+    try {
+      await fetchWithAuth(
+        `${API_BASE_URL}/api/chat`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: "user", content: userInput }),
+        },
+        API_BASE_URL,
+      );
+      await fetchWithAuth(
+        `${API_BASE_URL}/api/chat`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: "ai", content: aiResponseText }),
+        },
+        API_BASE_URL,
+      );
+    } catch {
+      // Non-blocking persistence failure
+    }
   };
 
   const handleKeyPress = (e) => {
