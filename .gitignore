@@ -31,6 +31,9 @@ __pycache__/
 *.pyc
 /.pytest_cache/
 
+# docs (kept local only)
+/docs/
+
 # IDE
 /.vscode/
 
