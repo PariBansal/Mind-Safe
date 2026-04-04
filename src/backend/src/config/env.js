@@ -45,8 +45,12 @@ const GOOGLE_CALLBACK_URL =
   "http://localhost:5000/api/auth/google/callback";
 const CHATBOT_SERVICE_URL =
   process.env.CHATBOT_SERVICE_URL || "http://localhost:8004";
+const EMOTION_DETECTION_URL =
+  process.env.EMOTION_DETECTION_URL || "http://localhost:8001";
 const MOOD_ANALYTICS_URL =
   process.env.MOOD_ANALYTICS_URL || "http://localhost:8002";
+const CRISIS_DETECTION_URL =
+  process.env.CRISIS_DETECTION_URL || "http://localhost:8003";
 const RECOMMENDATION_SERVICE_URL =
   process.env.RECOMMENDATION_SERVICE_URL || "http://localhost:8005";
 const DB_URL = process.env.DATABASE_URL || "postgresql://localhost/mindsafe";
@@ -78,7 +82,9 @@ module.exports = {
   GOOGLE_CLIENT_SECRET,
   GOOGLE_CALLBACK_URL,
   CHATBOT_SERVICE_URL,
+  EMOTION_DETECTION_URL,
   MOOD_ANALYTICS_URL,
+  CRISIS_DETECTION_URL,
   RECOMMENDATION_SERVICE_URL,
   DB_URL,
   USE_POSTGRES,

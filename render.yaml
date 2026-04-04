@@ -29,9 +29,9 @@ services:
       - key: USE_POSTGRES
         value: "true"
       - key: DATABASE_URL
-        sync: false  # Set manually (Neon connection string)
+        sync: false # Set manually (Neon connection string)
       - key: REDIS_URL
-        sync: false  # Set manually (Upstash connection string)
+        sync: false # Set manually (Upstash connection string)
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
@@ -45,17 +45,19 @@ services:
       - key: JWT_PASSWORD_RESET_SECRET
         generateValue: true
       - key: CORS_ORIGINS
-        sync: false  # Set to your Vercel frontend URL
+        sync: false # Set to your Vercel frontend URL
       - key: CHATBOT_SERVICE_URL
-        sync: false  # Set to mindsafe-chatbot internal URL
+        sync: false # Set to mindsafe-chatbot internal URL
       - key: EMOTION_DETECTION_URL
         sync: false
       - key: MOOD_ANALYTICS_URL
         sync: false
       - key: CRISIS_DETECTION_URL
         sync: false
+      - key: RECOMMENDATION_SERVICE_URL
+        sync: false # Set to mindsafe-recommendation URL (if deployed)
       - key: RABBITMQ_URL
-        sync: false  # Set manually (CloudAMQP URL)
+        sync: false # Set manually (CloudAMQP URL)
       - key: RESEND_API_KEY
         sync: false
       - key: GOOGLE_CLIENT_ID
@@ -84,6 +86,10 @@ services:
         value: WARNING
       - key: USE_NLP_CRISIS_CLASSIFIER
         value: "true"
+      - key: GROQ_API_KEY
+        sync: false # Get from console.groq.com
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
       - key: EMOTION_SERVICE_URL
         sync: false
       - key: TRANSFORMERS_CACHE
@@ -108,6 +114,8 @@ services:
         value: WARNING
       - key: MODEL_DEVICE
         value: cpu
+      - key: HF_API_TOKEN
+        sync: false # Get from huggingface.co/settings/tokens
       - key: TRANSFORMERS_CACHE
         value: /opt/render/.cache/huggingface
 

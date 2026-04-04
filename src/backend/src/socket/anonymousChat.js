@@ -10,6 +10,7 @@ const {
   EMOJI_REACTIONS,
   GRATITUDE_CARDS,
 } = require("./anonConstants");
+const { EMOTION_DETECTION_URL } = require("../config/env");
 
 // ---- In-memory stores (reconnect codes moved to Redis) ----
 const reportCounts = new Map(); // hash -> count
@@ -496,8 +497,7 @@ function setupAnonymousChat(server, { corsOrigin }) {
     const lastThree = recentMessages.slice(-3).join(". ");
 
     try {
-      const emotionUrl =
-        process.env.EMOTION_DETECTION_URL || "http://emotion_detection:8001";
+      const emotionUrl = EMOTION_DETECTION_URL;
       const resp = await fetch(`${emotionUrl}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

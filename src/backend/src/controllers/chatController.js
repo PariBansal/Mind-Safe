@@ -32,7 +32,7 @@ function createChatController(userDataService, { chatbotServiceUrl }) {
 
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 20000);
+      const timeout = setTimeout(() => controller.abort(), 55000);
 
       const response = await fetch(`${chatbotServiceUrl}/chat`, {
         method: "POST",
