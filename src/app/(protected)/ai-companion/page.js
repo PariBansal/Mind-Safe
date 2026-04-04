@@ -3,10 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { fetchWithAuth } from "@/lib/authClient";
-import {
-  createEncryptedEnvelope,
-  getEncryptionKey,
-} from "@/lib/encryptionClient";
 import { useVoicePlayback } from "@/hooks/useVoicePlayback";
 import { usePreferencesManager } from "@/hooks/usePreferencesManager";
 import VoiceSettings from "@/components/avatar/VoiceSettings";
@@ -240,60 +236,27 @@ export default function AICompanion() {
     }
 
     try {
-      // Encrypt and save user message
-      let encryptedUserMessage = userMessage;
-      try {
-        const key = await getEncryptionKey("mindsafe:chat");
-        const encryptedContent = await createEncryptedEnvelope(
-          userMessage.content,
-          key,
-          "mindsafe:chat",
-        );
-        encryptedUserMessage = {
-          role: userMessage.role,
-          content: encryptedContent,
-        };
-      } catch (encryptErr) {
-        console.error("Encryption warning for user message:", encryptErr);
-      }
-
+      // Persist user message
       await fetchWithAuth(
         `${API_BASE_URL}/api/chat`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(encryptedUserMessage),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            role: userMessage.role,
+            content: userMessage.content,
+          }),
         },
         API_BASE_URL,
       );
 
-      // Encrypt and save AI response
-      let encryptedAiResponse = { role: "ai", content: aiResponseText };
-      try {
-        const key = await getEncryptionKey("mindsafe:chat");
-        const encryptedContent = await createEncryptedEnvelope(
-          aiResponseText,
-          key,
-          "mindsafe:chat",
-        );
-        encryptedAiResponse = {
-          role: "ai",
-          content: encryptedContent,
-        };
-      } catch (encryptErr) {
-        console.error("Encryption warning for AI response:", encryptErr);
-      }
-
+      // Persist AI response
       await fetchWithAuth(
         `${API_BASE_URL}/api/chat`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(encryptedAiResponse),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: "ai", content: aiResponseText }),
         },
         API_BASE_URL,
       );
