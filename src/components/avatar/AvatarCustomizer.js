@@ -17,7 +17,7 @@ export default function AvatarCustomizer({
   const [formData, setFormData] = useState({
     avatarModel: currentPreferences.avatarModel || "female",
     avatarPreset: currentPreferences.avatarPreset || "neutral_light",
-    background: currentPreferences.background || "living_room",
+    background: currentPreferences.background || "soft_blue",
     emotion: currentPreferences.emotion || "neutral",
     voiceProfile:
       currentPreferences.voiceSettings?.voiceProfile || "david_english",
@@ -183,7 +183,7 @@ export default function AvatarCustomizer({
     const resetState = {
       avatarModel: currentPreferences.avatarModel || "female",
       avatarPreset: currentPreferences.avatarPreset || "neutral_light",
-      background: currentPreferences.background || "living_room",
+      background: currentPreferences.background || "soft_blue",
       emotion: currentPreferences.emotion || "neutral",
       voiceProfile:
         currentPreferences.voiceSettings?.voiceProfile || "david_english",

@@ -370,25 +370,28 @@ export default function AvatarPage() {
     await savePreferences(newPrefs);
   };
 
-  // Preview preferences without saving (for real-time customizer updates)
+  // Preview preferences and auto-save to localStorage
   const handlePreviewPreferences = (field, value) => {
-    if (field === "avatarPreset" && AVATAR_PRESETS[value]) {
-      const preset = AVATAR_PRESETS[value];
-      setPreferences((prev) => ({
-        ...prev,
-        avatarPreset: value,
-        skinTone: preset.skinTone,
-        hairColor: preset.hairColor,
-        clothingColor: prev.clothingColor, // keep user's clothing choice
-      }));
-    } else if (field === "avatarModel") {
-      setPreferences((prev) => ({ ...prev, avatarModel: value }));
-    } else {
-      setPreferences((prev) => ({
-        ...prev,
-        [field]: value,
-      }));
-    }
+    setPreferences((prev) => {
+      let updated;
+      if (field === "avatarPreset" && AVATAR_PRESETS[value]) {
+        const preset = AVATAR_PRESETS[value];
+        updated = {
+          ...prev,
+          avatarPreset: value,
+          skinTone: preset.skinTone,
+          hairColor: preset.hairColor,
+          clothingColor: prev.clothingColor,
+        };
+      } else {
+        updated = { ...prev, [field]: value };
+      }
+      // Persist every change so settings survive navigation
+      try {
+        localStorage.setItem("avatarPreferences", JSON.stringify(updated));
+      } catch (_) {}
+      return updated;
+    });
   };
 
   return (
