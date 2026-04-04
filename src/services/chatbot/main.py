@@ -236,6 +236,9 @@ async def startup_event():
     logger.info("MindSafe Chatbot Service starting...")
     logger.info(f"Emotion service URL: {EMOTION_SERVICE_URL}")
     logger.info(f"NLP crisis classifier enabled: {USE_NLP_CRISIS_CLASSIFIER}")
+    # Eagerly init Groq client so the first user message isn't delayed
+    from response_generator import _get_groq_client
+    _get_groq_client()
 
 
 @app.on_event("shutdown")
@@ -247,10 +250,13 @@ async def shutdown_event():
 
 @app.get("/health")
 async def health_check():
+    from response_generator import _groq_client, GROQ_API_KEY
+    groq_ready = _groq_client is not None or not GROQ_API_KEY
     return {
         "status": "ok",
         "service": "chatbot",
         "version": "1.0.0",
+        "groq_ready": groq_ready,
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     }
 
