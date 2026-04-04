@@ -51,21 +51,32 @@ function createChatController(userDataService, { chatbotServiceUrl }) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 120_000);
 
-      const response = await fetch(`${chatbotServiceUrl}/chat`, {
+      const payload = {
+        content: content.trim(),
+        session_id: session_id || null,
+        style: normalizedStyle,
+        user_name: useName ? userName : "friend",
+        use_name: useName,
+        use_memory: useMemory,
+      };
+
+      let response = await fetch(`${chatbotServiceUrl}/chat`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: content.trim(),
-          session_id: session_id || null,
-          style: normalizedStyle,
-          user_name: useName ? userName : "friend",
-          use_name: useName,
-          use_memory: useMemory,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
         signal: controller.signal,
       });
+
+      // Retry once if chatbot is waking up (Render free-tier cold start)
+      if (!response.ok && (response.status >= 500 || response.status === 0)) {
+        await new Promise((r) => setTimeout(r, 3000));
+        response = await fetch(`${chatbotServiceUrl}/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+      }
 
       clearTimeout(timeout);
 
@@ -79,11 +90,35 @@ function createChatController(userDataService, { chatbotServiceUrl }) {
       return res.json(data);
     } catch (error) {
       const isAbort = error && error.name === "AbortError";
-      return res.status(isAbort ? 504 : 502).json({
-        message: isAbort
-          ? "chatbot request timed out"
-          : "chatbot service unavailable",
-      });
+      if (isAbort) {
+        return res.status(504).json({ message: "chatbot request timed out" });
+      }
+
+      // Retry once on network error (chatbot may be waking from sleep)
+      try {
+        await new Promise((r) => setTimeout(r, 4000));
+        const retryController = new AbortController();
+        const retryTimeout = setTimeout(() => retryController.abort(), 60_000);
+        const retryRes = await fetch(`${chatbotServiceUrl}/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: content.trim(),
+            session_id: session_id || null,
+            style: normalizedStyle,
+            user_name: useName ? userName : "friend",
+            use_name: useName,
+            use_memory: useMemory,
+          }),
+          signal: retryController.signal,
+        });
+        clearTimeout(retryTimeout);
+        const retryData = await retryRes.json();
+        if (retryRes.ok) return res.json(retryData);
+        return res.status(retryRes.status).json({ message: retryData?.detail || "chatbot request failed" });
+      } catch {
+        return res.status(502).json({ message: "chatbot service unavailable" });
+      }
     }
   }
 
