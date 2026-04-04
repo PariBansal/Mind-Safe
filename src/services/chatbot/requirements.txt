@@ -1,11 +1,11 @@
 # Chatbot Service Dependencies
 --extra-index-url https://download.pytorch.org/whl/cpu
 
-fastapi
-uvicorn
+fastapi>=0.104
+uvicorn>=0.24
 requests
-pydantic
-transformers
+pydantic>=2.5
+transformers>=4.35
 groq
 chromadb
 sentence-transformers
