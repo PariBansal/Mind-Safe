@@ -12,7 +12,14 @@ function AnonAvatar({ seed, size = 32, className = "" }) {
     const avatar = createAvatar(bottts, {
       seed,
       size,
-      backgroundColor: ["0ea5e9", "6366f1", "8b5cf6", "ec4899", "f59e0b", "10b981"],
+      backgroundColor: [
+        "0ea5e9",
+        "6366f1",
+        "8b5cf6",
+        "ec4899",
+        "f59e0b",
+        "10b981",
+      ],
       backgroundType: ["solid"],
     });
     return avatar.toDataUri();
@@ -49,7 +56,11 @@ function AmbientSoundscape() {
 
   const stopSound = useCallback(() => {
     nodesRef.current.sources.forEach((s) => {
-      try { s.stop(); } catch (e) { /* already stopped */ }
+      try {
+        s.stop();
+      } catch (e) {
+        /* already stopped */
+      }
     });
     nodesRef.current = { sources: [], gain: null };
     if (ctxRef.current) {
@@ -325,7 +336,18 @@ const AVAILABILITY = ["5min", "15min", "30min"];
 const AGE_BRACKETS = ["under18", "18-24", "25-34", "35+"];
 const WARMUP_OPTIONS = ["off", "1min", "2min", "5min", "untilReady"];
 const EMOJI_REACTIONS = ["❤️", "😂", "🤗", "💪", "🙏", "😢", "👍", "✨"];
-const QUICK_EMOJIS = ["😊", "😢", "😰", "😡", "😴", "🤗", "💪", "🙏", "❤️", "😔"];
+const QUICK_EMOJIS = [
+  "😊",
+  "😢",
+  "😰",
+  "😡",
+  "😴",
+  "🤗",
+  "💪",
+  "🙏",
+  "❤️",
+  "😔",
+];
 const GRATITUDE_CARDS = [
   "Thank you for listening. It meant more than you know. 💙",
   "I'm glad we talked. You made my day a little brighter. ✨",
@@ -353,7 +375,8 @@ const THEMES = {
     dimText: "text-slate-500",
     bubbleMe: "bg-cyan-700 text-white",
     bubblePartner: "bg-slate-800 text-slate-200",
-    inputBg: "bg-slate-800 border-slate-600 text-slate-100 placeholder-slate-400 focus:border-cyan-500 focus:ring-cyan-500",
+    inputBg:
+      "bg-slate-800 border-slate-600 text-slate-100 placeholder-slate-400 focus:border-cyan-500 focus:ring-cyan-500",
     btnPrimary: "bg-cyan-600 hover:bg-cyan-500 text-white focus:ring-cyan-500",
     btnSecondary: "bg-slate-800 text-slate-400 hover:text-slate-200",
     popoverBg: "bg-slate-800 border-slate-700",
@@ -377,8 +400,10 @@ const THEMES = {
     dimText: "text-stone-500",
     bubbleMe: "bg-amber-700 text-white",
     bubblePartner: "bg-stone-800 text-stone-200",
-    inputBg: "bg-stone-800 border-stone-600 text-stone-100 placeholder-stone-400 focus:border-amber-500 focus:ring-amber-500",
-    btnPrimary: "bg-amber-600 hover:bg-amber-500 text-white focus:ring-amber-500",
+    inputBg:
+      "bg-stone-800 border-stone-600 text-stone-100 placeholder-stone-400 focus:border-amber-500 focus:ring-amber-500",
+    btnPrimary:
+      "bg-amber-600 hover:bg-amber-500 text-white focus:ring-amber-500",
     btnSecondary: "bg-stone-800 text-stone-400 hover:text-stone-200",
     popoverBg: "bg-stone-800 border-stone-700",
     accentText: "text-amber-400",
@@ -401,7 +426,8 @@ const THEMES = {
     dimText: "text-sky-400",
     bubbleMe: "bg-teal-600 text-white",
     bubblePartner: "bg-sky-800/80 text-sky-100",
-    inputBg: "bg-sky-800/60 border-sky-600 text-sky-50 placeholder-sky-400 focus:border-teal-400 focus:ring-teal-400",
+    inputBg:
+      "bg-sky-800/60 border-sky-600 text-sky-50 placeholder-sky-400 focus:border-teal-400 focus:ring-teal-400",
     btnPrimary: "bg-teal-600 hover:bg-teal-500 text-white focus:ring-teal-500",
     btnSecondary: "bg-sky-800/60 text-sky-300 hover:text-sky-100",
     popoverBg: "bg-sky-800 border-sky-700",
@@ -524,10 +550,13 @@ export default function AnonymousChat() {
   // ---- Socket setup ----
   const initSocket = useCallback(() => {
     if (socketRef.current) return;
-    const newSocket = io(
-      process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000",
-      { transports: ["websocket", "polling"] },
-    );
+    const socketUrl =
+      process.env.NEXT_PUBLIC_SOCKET_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:5000";
+    const newSocket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+    });
     socketRef.current = newSocket;
 
     // Identity
@@ -807,7 +836,9 @@ export default function AnonymousChat() {
   //  RENDER
   // =================================================================
   return (
-    <div className={`min-h-screen ${t.pageBg} p-6 md:p-10 transition-colors duration-300`}>
+    <div
+      className={`min-h-screen ${t.pageBg} p-6 md:p-10 transition-colors duration-300`}
+    >
       <div className="mx-auto max-w-2xl">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
@@ -827,11 +858,16 @@ export default function AnonymousChat() {
                   {THEMES[theme].emoji}
                 </button>
                 {themePanelOpen && (
-                  <div className={`absolute right-0 top-full z-20 mt-2 w-36 rounded-xl border p-2 shadow-xl backdrop-blur-xl ${t.popoverBg}`}>
+                  <div
+                    className={`absolute right-0 top-full z-20 mt-2 w-36 rounded-xl border p-2 shadow-xl backdrop-blur-xl ${t.popoverBg}`}
+                  >
                     {Object.values(THEMES).map((th) => (
                       <button
                         key={th.id}
-                        onClick={() => { setTheme(th.id); setThemePanelOpen(false); }}
+                        onClick={() => {
+                          setTheme(th.id);
+                          setThemePanelOpen(false);
+                        }}
                         className={`flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs transition ${
                           theme === th.id
                             ? `${t.accentBg} ${t.accentText}`
@@ -1174,7 +1210,9 @@ export default function AnonymousChat() {
         {phase === PHASE.CHAT && (
           <div className="space-y-3">
             {/* Partner info bar */}
-            <div className={`flex items-center justify-between rounded-xl border ${t.partnerBar} px-4 py-2 backdrop-blur-xl`}>
+            <div
+              className={`flex items-center justify-between rounded-xl border ${t.partnerBar} px-4 py-2 backdrop-blur-xl`}
+            >
               <div className="flex items-center gap-2">
                 {partnerAvatar ? (
                   <AnonAvatar seed={partnerAvatar} size={32} />
@@ -1188,7 +1226,9 @@ export default function AnonymousChat() {
                     {partnerName}
                   </span>
                   {sharedTopic && sharedTopic !== "general" && (
-                    <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${t.topicBadge}`}>
+                    <span
+                      className={`ml-2 rounded-full px-2 py-0.5 text-xs ${t.topicBadge}`}
+                    >
                       {sharedTopic}
                     </span>
                   )}
@@ -1198,7 +1238,7 @@ export default function AnonymousChat() {
                 <button
                   onClick={requestReconnect}
                   title="Request reconnect code"
-                  className={`rounded-lg p-1.5 ${t.mutedText} ${t.actionHover} hover:${t.accentText.replace('text-', 'text-')}`}
+                  className={`rounded-lg p-1.5 ${t.mutedText} ${t.actionHover} hover:${t.accentText.replace("text-", "text-")}`}
                 >
                   🔗
                 </button>
@@ -1274,7 +1314,9 @@ export default function AnonymousChat() {
             )}
 
             {/* Messages area */}
-            <div className={`h-[28rem] overflow-y-auto rounded-2xl border ${t.cardBorder} ${t.cardBg} p-4 backdrop-blur-xl transition-colors duration-300`}>
+            <div
+              className={`h-[28rem] overflow-y-auto rounded-2xl border ${t.cardBorder} ${t.cardBg} p-4 backdrop-blur-xl transition-colors duration-300`}
+            >
               {messages.map((msg, i) => {
                 if (msg.sender === "system") {
                   return (
@@ -1303,7 +1345,11 @@ export default function AnonymousChat() {
                     className={`mb-2 flex items-end gap-2 ${isMe ? "justify-end" : "justify-start"}`}
                   >
                     {!isMe && (
-                      <AnonAvatar seed={partnerAvatar} size={24} className="mb-0.5 shrink-0" />
+                      <AnonAvatar
+                        seed={partnerAvatar}
+                        size={24}
+                        className="mb-0.5 shrink-0"
+                      />
                     )}
                     <div
                       className={`max-w-[70%] rounded-2xl px-4 py-2 ${textCls} ${
@@ -1313,14 +1359,20 @@ export default function AnonymousChat() {
                       {msg.text}
                     </div>
                     {isMe && (
-                      <AnonAvatar seed={myAvatar} size={24} className="mb-0.5 shrink-0" />
+                      <AnonAvatar
+                        seed={myAvatar}
+                        size={24}
+                        className="mb-0.5 shrink-0"
+                      />
                     )}
                   </div>
                 );
               })}
 
               {partnerTyping && (
-                <div className={`flex items-center gap-1 text-xs ${t.mutedText}`}>
+                <div
+                  className={`flex items-center gap-1 text-xs ${t.mutedText}`}
+                >
                   <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" />
                   <span className="animation-delay-100 h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" />
                   <span className="animation-delay-200 h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" />
@@ -1352,7 +1404,7 @@ export default function AnonymousChat() {
                   setShowEmojiPicker(false);
                   setShowGratitude(false);
                 }}
-                className={`rounded-xl border px-3 py-2.5 text-sm transition ${t.inputBg.split(' ').slice(0,2).join(' ')} hover:opacity-80`}
+                className={`rounded-xl border px-3 py-2.5 text-sm transition ${t.inputBg.split(" ").slice(0, 2).join(" ")} hover:opacity-80`}
                 aria-label="Quick emojis"
               >
                 😊
@@ -1365,13 +1417,15 @@ export default function AnonymousChat() {
                     setShowGratitude(false);
                     setShowQuickEmojis(false);
                   }}
-                  className={`rounded-xl border px-3 py-2.5 text-sm transition ${t.inputBg.split(' ').slice(0,2).join(' ')} hover:opacity-80`}
+                  className={`rounded-xl border px-3 py-2.5 text-sm transition ${t.inputBg.split(" ").slice(0, 2).join(" ")} hover:opacity-80`}
                   aria-label="Emoji reactions"
                 >
                   🎉
                 </button>
                 {showEmojiPicker && (
-                  <div className={`absolute bottom-12 left-0 z-10 flex gap-1 rounded-xl border p-2 shadow-lg ${t.popoverBg}`}>
+                  <div
+                    className={`absolute bottom-12 left-0 z-10 flex gap-1 rounded-xl border p-2 shadow-lg ${t.popoverBg}`}
+                  >
                     {EMOJI_REACTIONS.map((e) => (
                       <button
                         key={e}
@@ -1393,13 +1447,15 @@ export default function AnonymousChat() {
                     setShowEmojiPicker(false);
                     setShowQuickEmojis(false);
                   }}
-                  className={`rounded-xl border px-3 py-2.5 text-sm transition ${t.inputBg.split(' ').slice(0,2).join(' ')} hover:opacity-80`}
+                  className={`rounded-xl border px-3 py-2.5 text-sm transition ${t.inputBg.split(" ").slice(0, 2).join(" ")} hover:opacity-80`}
                   aria-label="Send gratitude card"
                 >
                   💌
                 </button>
                 {showGratitude && (
-                  <div className={`absolute bottom-12 left-0 z-10 w-72 space-y-1 rounded-xl border p-3 shadow-lg ${t.popoverBg}`}>
+                  <div
+                    className={`absolute bottom-12 left-0 z-10 w-72 space-y-1 rounded-xl border p-3 shadow-lg ${t.popoverBg}`}
+                  >
                     {GRATITUDE_CARDS.map((c, i) => (
                       <button
                         key={i}

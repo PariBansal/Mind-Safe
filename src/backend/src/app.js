@@ -153,7 +153,7 @@ async function createApp() {
 
   return {
     app,
-    socketCorsOrigin: FRONTEND_ORIGIN.split(",")[0].trim(),
+    socketCorsOrigin: FRONTEND_ORIGIN.split(",").map((s) => s.trim()),
   };
 }
 
