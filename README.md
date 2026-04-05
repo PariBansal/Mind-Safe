@@ -122,7 +122,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 src/
 ├── app/              # Next.js pages and routes
 ├── backend/          # Node.js Express API server
-├── components/       # React components
+├── components/       # React components (incl. ServiceWarmup keep-alive)
 ├── hooks/            # Custom React hooks
 ├── lib/              # Shared utilities and helpers
 ├── services/         # Python FastAPI microservices
@@ -141,15 +141,15 @@ tests/                # Smoke and integration tests
 
 ## Troubleshooting
 
-| Problem                              | Fix                                                              |
-| ------------------------------------ | ---------------------------------------------------------------- |
-| Frontend stuck on "Compiling"        | Delete `.next/` folder and restart `npm run dev`                 |
-| "Trouble connecting" in AI Companion | Start the chatbot service: `python src/services/chatbot/main.py` |
-| AI Companion slow first response     | Render free tier cold start (~50s) — wait and retry              |
-| 401 Unauthorized on API calls        | Sign up / log in first — all API routes require JWT auth         |
-| Avatar stuck in T-pose               | Ensure VRM files in `public/avatars/` are valid (15+ MB each)    |
-| Python module not found              | Activate venv and install requirements for the specific service  |
-| Port already in use                  | Kill the process: `npx kill-port 3000` (or whichever port)       |
+| Problem                              | Fix                                                                                                                                                              |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend stuck on "Compiling"        | Delete `.next/` folder and restart `npm run dev`                                                                                                                 |
+| "Trouble connecting" in AI Companion | Start the chatbot service: `python src/services/chatbot/main.py`                                                                                                 |
+| AI Companion slow first response     | Auto-handled: services kept alive via cron pings every 14 min + client keep-alive heartbeat. If cold start occurs, frontend retries transparently for up to 120s |
+| 401 Unauthorized on API calls        | Sign up / log in first — all API routes require JWT auth                                                                                                         |
+| Avatar stuck in T-pose               | Ensure VRM files in `public/avatars/` are valid (15+ MB each)                                                                                                    |
+| Python module not found              | Activate venv and install requirements for the specific service                                                                                                  |
+| Port already in use                  | Kill the process: `npx kill-port 3000` (or whichever port)                                                                                                       |
 
 ## Docs
 
@@ -160,6 +160,26 @@ tests/                # Smoke and integration tests
 - [API Documentation](docs/api/REST-API.md)
 - [Encryption Implementation](docs/ENCRYPTION_IMPLEMENTATION.md)
 - [In-App Testing Steps](docs/IN_APP_TESTING_STEPS.md)
+
+### Endpoints
+
+| Endpoint           | Purpose                                           |
+| ------------------ | ------------------------------------------------- |
+| `/health`          | API gateway health check                          |
+| `/warmup`          | Wake all microservices (waits for readiness)      |
+| `/api/cron/warmup` | Vercel serverless route for external cron pinging |
+
+## Service Keep-Alive (Cold Start Prevention)
+
+Render free-tier services sleep after 15 min of inactivity. MindSafe uses a 3-layer defense:
+
+| Layer                 | How                                                                          | Coverage                          |
+| --------------------- | ---------------------------------------------------------------------------- | --------------------------------- |
+| **External cron**     | [cron-job.org](https://cron-job.org) pings `/api/cron/warmup` every 14 min   | 24/7, even with no users          |
+| **Client keep-alive** | `ServiceWarmup` component pings `/warmup` every 13 min while any tab is open | Active users                      |
+| **Retry loops**       | Frontend retries every 5s for 120s; backend retries 8 times over 90s         | Safety net if services still cold |
+
+The `/warmup` endpoint on the backend waits for all microservices (chatbot, mood, recommendation) to respond before returning. The Vercel cron route at `/api/cron/warmup` proxies this for external cron services.
 
 ## 3D Avatar System
 
