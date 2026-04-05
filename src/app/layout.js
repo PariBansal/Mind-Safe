@@ -1,4 +1,5 @@
 import AuthGuard from "@/components/AuthGuard";
+import ServiceWarmup from "@/components/ServiceWarmup";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -13,6 +14,7 @@ export default function RootLayout({ children }) {
     <html lang="en" className="dark-mode">
       <body className="bg-slate-950 text-slate-100">
         <ThemeProvider>
+          <ServiceWarmup />
           <div className="flex min-h-screen">
             {/* Sidebar */}
             <Sidebar />

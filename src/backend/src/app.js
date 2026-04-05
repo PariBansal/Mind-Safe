@@ -129,6 +129,7 @@ async function createApp() {
 
   app.get("/", basicController.getRoot);
   app.get("/health", basicController.getHealth);
+  app.get("/warmup", basicController.warmup);
 
   // Add decryption middleware for client-encrypted envelopes (after auth)
   app.use("/api", createDecryptEnvelopeMiddleware(userRepository));
