@@ -1,5 +1,11 @@
 # MindSafe — Privacy-First Mental Health Platform
 
+🔗 **Live Site:** [mind-safe-tan.vercel.app](https://mind-safe-tan.vercel.app)
+
+📂 **GitHub Repositories:**
+- [PariBansal/Mind-Safe](https://github.com/PariBansal/Mind-Safe)
+- [anushka103-cell/Mini-project](https://github.com/anushka103-cell/Mini-project)
+
 A Next.js + Python microservices platform providing AI companions, anonymous peer support, mood tracking, 3D VRM avatars with emotion-responsive expressions, and therapeutic games — all with end-to-end encryption.
 
 ## Architecture
