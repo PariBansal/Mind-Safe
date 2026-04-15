@@ -12,7 +12,8 @@
 export const dynamic = "force-dynamic"; // never cache
 export const maxDuration = 120; // allow up to 120 s on Vercel (Hobby limit)
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://mindsafe-api.onrender.com";
 
 export async function GET() {
   try {

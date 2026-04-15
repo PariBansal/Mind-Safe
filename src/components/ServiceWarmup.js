@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://mindsafe-api.onrender.com";
 
 /**
  * Two-phase background service keep-alive:
